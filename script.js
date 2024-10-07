@@ -2,17 +2,23 @@ const todoInput = document.getElementById("todo-input");
 const addButton = document.getElementById("add-btn");
 const formContainer = document.getElementById("form-container");
 const todosContainer = document.querySelector(".todos-container");
+const formWrappers = document.querySelectorAll("form");
 const h2Form = document.createElement("h2");
 const form = document.createElement("form");
 
 const radioBtnArray = ["All", "Open", "Done"];
 let todos = JSON.parse(localStorage.getItem("todos")) || [];
 let filteredTodos = [...todos];
+let lastId = 0;
 
 addButton.addEventListener("click", addTodo);
+formWrappers.forEach((form) => {
+  form.addEventListener("submit", (event) => event.preventDefault());
+});
 
 h2Form.textContent = "Filter & Options";
 form.classList.add("mbl-2");
+form.classList.add("radioForm");
 
 formContainer.appendChild(h2Form);
 formContainer.appendChild(form);
@@ -23,7 +29,7 @@ function render() {
 }
 
 function renderForm() {
-  form.innerHTML = "";
+  form.textContent = "";
   for (let i = 0; i < radioBtnArray.length; i++) {
     const input = createFormInput(i);
     const label = createFormLabel(i, input);
@@ -68,7 +74,6 @@ function createRemoveBtn() {
 }
 
 function removeDoneTodos(e) {
-    e.preventDefault(); 
     todos = todos.filter(todo => !todo.done);
     localStorage.setItem("todos", JSON.stringify(todos));
     filterTodos();
@@ -78,61 +83,59 @@ function removeDoneTodos(e) {
 // ========== end helper functions for form ===========
 
 function renderTodos() {
-    todosContainer.innerHTML = "";
+    todosContainer.textContent = "";
     filteredTodos.forEach((todo, i) => {
-      const section = createTodoSection();
+      const form = createTodoForm();
       const description = createTodoDescription(todo); 
       const input = createTodoInput(todo, description); 
-      section.append(input, description);
-      todosContainer.append(section);
+      form.append(input, description);
+      todosContainer.append(form);
     });
   }  
 
 // =========== helper functions for todos list: ===========
 
-function createTodoSection() {
-  const section = document.createElement("section");
-  section.classList.add("todo");
-  return section;
+function createTodoForm() {
+  const form = document.createElement("form");
+  form.classList.add("todo");
+  return form;
 }
 
 function createTodoInput(todo, description) {
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.checked = todo.done;
-    input.name = `todo-checkbox-${todo.id}`;
-  
-    input.addEventListener("change", () => markTodoAsDone(todo, input, description));
-  
-    return input;
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = todo.done;
+  input.id = `todo-checkbox-${todo.id}`;  
+
+  input.addEventListener("change", () => markTodoAsDone(todo, input, description));
+
+  return input;
+}
+
+function createTodoDescription(todo) {
+  const description = document.createElement("p");
+  description.textContent = todo.description;
+
+  if (todo.done) description.classList.add("line-through");
+
+  return description;
+}
+
+function markTodoAsDone(todo, input, description) {
+  todo.done = input.checked;
+
+  if (todo.done) {
+    description.classList.add("line-through");
+  } else {
+    description.classList.remove("line-through");
   }
 
-  function createTodoDescription(todo) {
-    const description = document.createElement("p");
-    description.textContent = todo.description;
-  
-    if (todo.done) description.classList.add("line-through");
-  
-    return description;
-  }
-
-  function markTodoAsDone(todo, input, description) {
-    todo.done = input.checked;
-  
-    if (todo.done) {
-      description.classList.add("line-through");
-    } else {
-      description.classList.remove("line-through");
-    }
-  
-    filterTodos(); 
-  }  
+  filterTodos(); 
+}
 
 // =========== end helper functions for todos list ===========
 
 function addTodo(e) {
-  e.preventDefault(); 
-
   const inputValue = todoInput.value.trim();
 
   if (inputValue) {
@@ -161,8 +164,8 @@ function checkifTodoExists(description) {
 }
 
 function createId() {
-  const lastId = todos.length > 0 ? todos[todos.length - 1].id : 0;
-  return lastId + 1;
+  lastId += 1;
+  return lastId;
 }
 
 function filterTodos() {
